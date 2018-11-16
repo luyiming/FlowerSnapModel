@@ -1,0 +1,5 @@
+{
+    "model": "densenet121",
+    "dataset_path": "dataset/flower17",
+    "output_path": "keras_model/flower17"
+}

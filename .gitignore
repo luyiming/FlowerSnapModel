@@ -1,0 +1,8 @@
+.DS_Store
+__pycache__
+.ipynb_checkpoints
+.vscode
+dataset
+keras_model
+mlmodel
+photo_test
