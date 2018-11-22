@@ -17,6 +17,9 @@ from keras.layers import Input
 from keras.preprocessing import image
 from keras.applications.densenet import DenseNet121
 
+import hashlib
+
+
 import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -36,6 +39,17 @@ DATASET_PATH = config['dataset_path']
 OUTPUT_PATH = os.path.join(config['output_path'], BASE_MODEL)
 
 seed = 123456
+
+if not os.path.exists('cache'):
+    os.makedirs('cache')
+
+cache_file = os.path.join('cache', '{}-{}.pickle'.format(BASE_MODEL,os.path.split(DATASET_PATH)[1]))
+
+feature_cache = {}
+if os.path.exists(cache_file):
+    with open(cache_file, 'rb') as f:
+        feature_cache = pickle.load(f)
+    print("[INFO] using cache...")
 
 
 def preprocess_input(x):
@@ -64,10 +78,7 @@ else:
 
 print("[INFO] successfully loaded base model...")
 
-# variables to hold features and labels
-features = []
-labels = []
-
+all_images_hash = set()
 # loop over all the labels in the folder
 for label in os.listdir(DATASET_PATH):
     cur_path = os.path.join(DATASET_PATH, label)
@@ -75,16 +86,47 @@ for label in os.listdir(DATASET_PATH):
         continue
     print("[INFO] processing label - " + label)
     for i, image_path in enumerate(glob.glob(os.path.join(cur_path, "*.jpg"))):
+        hasher = hashlib.md5()
+        with open(image_path, 'rb') as f:
+            hasher.update(f.read())
+        image_hash = hasher.hexdigest()
+        all_images_hash.add(image_hash)
+        # print(image_hash)
+
+        if image_hash in feature_cache:
+            print(".", end=' ', flush=True)
+            continue
+
         img = image.load_img(image_path, target_size=image_size)
         x = image.img_to_array(img)
         x = np.expand_dims(x, axis=0)
         x = preprocess_input(x)
         feature = model.predict(x)
         flat = feature.flatten()
-        features.append(flat)
-        labels.append(label)
+        # features.append(flat)
+        # labels.append(label)
+
+        feature_cache[image_hash] = {
+            "feature": flat,
+            "label": label
+        }
+
         print(i, end=' ', flush=True)
-    print()
+
+    with open(cache_file, 'wb') as f:
+        pickle.dump(feature_cache, f)
+    print("\n[INFO] saving cache...")
+
+
+# variables to hold features and labels
+features = []
+labels = []
+
+for image_hash, value in feature_cache.items():
+    if image_hash not in all_images_hash:
+        continue
+    features.append(value['feature'])
+    labels.append(value['label'])
 
 # encode the labels using LabelEncoder
 le = LabelEncoder()

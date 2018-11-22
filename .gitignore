@@ -6,3 +6,5 @@ dataset
 keras_model
 mlmodel
 photo_test
+thumbnails
+cache

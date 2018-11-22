@@ -3,8 +3,8 @@ import pickle
 import os
 import shutil
 
-MODEL_PATH = 'output/flowers17/densenet'
-OUTPUT_PATH = 'mlmodel/densenet'
+MODEL_PATH = 'keras_model/total/densenet121'
+OUTPUT_PATH = 'mlmodel/total/densenet121'
 
 if os.path.exists(OUTPUT_PATH):
     shutil.rmtree(OUTPUT_PATH)
